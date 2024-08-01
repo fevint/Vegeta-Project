@@ -13,8 +13,9 @@ const Response = ({ message = "Success", data, status = 200 }: IResponse) =>
       message,
       data,
     },
-    { status }
+    {
+      status,
+    }
   );
 
-
-  export default Response;
+export default Response;

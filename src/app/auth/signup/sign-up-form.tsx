@@ -8,7 +8,8 @@ import { cn } from "@/lib/utils";
 import * as yup from "yup";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-
+import { useRegisterMutation } from "@/services/auth";
+import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -16,7 +17,7 @@ type UserAuthForm = {
   email: string;
   password: string;
   name: string;
-  confirm_password?: string | undefined;
+  confirm_password: string | undefined;
 };
 
 const schema = yup
@@ -45,9 +46,33 @@ function SignUpForm() {
   } = useForm<UserAuthForm>({
     resolver: yupResolver(schema),
   });
+  const [registerMutation] = useRegisterMutation();
 
   const onSubmit = async (data: UserAuthForm) => {
-    console.log("🚀 ~ onSubmit ~ data:", data);
+    try {
+      const res = await registerMutation(data).unwrap();
+
+      console.log("🚀 ~ onSubmit ~ res:", res);
+
+      if (res.success) {
+        const user = await signIn("credentials", {
+          email: data.email,
+          password: data.password,
+          callbackUrl: searchParams.get("callbackUrl") || "/",
+          redirect: false,
+        });
+        router.push(user?.url || "/");
+      } else {
+        toast({
+          title: "Something went wrong",
+          description: "Please check your email and password",
+          variant: "destructive",
+          duration: 2000,
+        });
+      }
+    } catch (error) {
+      console.log("🚀 ~ file: sign-up-form.tsx:49 ~ onSubmit ~ error:", error);
+    }
   };
 
   return (
@@ -95,7 +120,6 @@ function SignUpForm() {
       <Button
         type="submit"
         className={cn("w-[320px] bg-leaf mt-6 mx-auto", hover.shadow)}
-        
       >
         Buat Akun
       </Button>
