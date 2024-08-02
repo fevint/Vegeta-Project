@@ -3,6 +3,10 @@ import BaseResponse from "@/types/response";
 import { Product } from "@prisma/client";
 
 interface ProductResponse extends BaseResponse {
+  data: Product;
+}
+
+interface ProductsResponse extends BaseResponse {
   data: {
     data: Product[];
     total: number;
@@ -24,7 +28,7 @@ export const productApi = createApi({
   }),
   tagTypes: ["product"],
   endpoints: (builder) => ({
-    getAllProducts: builder.query<ProductResponse, ProductApiItems>({
+    getAllProducts: builder.query<ProductsResponse, ProductApiItems>({
       query: ({ page, category, min_price, max_price, rating }) => ({
         url: "/",
         params: {
@@ -36,7 +40,13 @@ export const productApi = createApi({
         },
       }),
     }),
+    getProductById: builder.query<ProductResponse, string>({
+      query: (id) => ({
+        url: `/${id}`,
+        params: {},
+      }),
+    }),
   }),
 });
 
-export const { useGetAllProductsQuery } = productApi;
+export const { useGetAllProductsQuery, useGetProductByIdQuery } = productApi;

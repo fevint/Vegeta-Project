@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { IconBag, IconCart, IconStar } from "@/components/icons";
 import { ProductShowcase } from "@/components/product/product-showcase";
 import CommonStepper from "@/components/common/common-stepper";
-import { ProductDetails } from "@/components/product/product-card";
 
 // utils
 import { cn, formatNumber } from "@/lib/utils";
@@ -17,16 +16,20 @@ import { hover } from "@/lib/hover";
 
 // assets
 import ProductsJSON from "@/assets/json/products.json";
-import { useGetAllProductsQuery } from "@/services/product";
+import {
+  useGetAllProductsQuery,
+  useGetProductByIdQuery,
+} from "@/services/product";
 
-export default function Products() {
+export default function Products({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [itemCount, setItemCount] = useState(1);
-  const { data, isLoading } = useGetAllProductsQuery({});
+  const { data: productDetails } = useGetProductByIdQuery(params.id);
+  const { data: recommendedProducts } = useGetAllProductsQuery({});
 
-  const productDetails = ProductsJSON[0];
+  // const productDetails = ProductsJSON[0];
 
-  const [recommendedProducts] = useState<ProductDetails[]>(ProductsJSON);
+  // const [recommendedProducts] = useState<ProductDetails[]>(ProductsJSON);
 
   return (
     <main className="flex flex-col w-full min-h-screen items-center pb-8">
@@ -34,7 +37,7 @@ export default function Products() {
         <div className="border p-2 rounded-xl">
           <div className="w-[376px] h-[376px] relative">
             <Image
-              src={productDetails.img}
+              src={productDetails?.data.img || ""}
               layout="fill"
               alt=""
               objectFit="contain"
@@ -43,25 +46,22 @@ export default function Products() {
         </div>
         <div className="flex flex-col gap-4">
           <div className="text-leaf font-semibold">
-            {productDetails.category}
-          </div>
-          <div className="text-4xl font-semibold">{productDetails.name}</div>
-          <div className="flex gap-2">
-            <IconStar className="w-5 h-5" stroke="carrot" fill="carrot" />
-            <span>{productDetails.rating}</span>
-            <span>|</span>
-            <span>{productDetails.sold} terjual</span>
+            {productDetails?.data.category}
           </div>
           <div className="text-4xl font-semibold">
-            Rp {formatNumber(productDetails.price)} / {productDetails.unit}
+            {productDetails?.data.name}
+          </div>
+          <div className="flex gap-2">
+            <IconStar className="w-5 h-5" stroke="carrot" fill="carrot" />
+            <span>{productDetails?.data.rating}</span>
+            <span>|</span>
+            <span>{productDetails?.data.itemSold} terjual</span>
+          </div>
+          <div className="text-4xl font-semibold">
+            Rp {formatNumber(productDetails?.data.price || 0)} / kg
           </div>
           <div className="text-gray-400">
-            Wortel dapat dimakan dengan berbagai cara. Pada wortel mentah hanya
-            3% β-ririencha yang dilepaskan selama proses pencernaan, proses ini
-            dapat ditingkatkan hingga 39% melalui pulping, memasaknya dan
-            menambahkan minyak sawit. Bisa juga dengan cara di buat jus wortel
-            dan kandungan vitaminnya hampir sama dengan wortel yang dimakan
-            begitu saja.
+            {productDetails?.data.description}
           </div>
           <div className="flex gap-4 items-center">
             <CommonStepper
@@ -107,7 +107,7 @@ export default function Products() {
         </div>
         <ProductShowcase
           gridConfig={"grid-cols-4"}
-          products={recommendedProducts}
+          products={recommendedProducts?.data.data.slice(0, 4) || []}
         />
       </div>
     </main>
