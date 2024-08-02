@@ -9,14 +9,13 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 // assets
 import ProductCategoryJSON from "@/assets/json/product-category.json";
-import ProductsJSON from "@/assets/json/products.json";
 import ImageBanner from "@/assets/images/image-banner.png";
 
 //services
 import { useGetAllProductsQuery } from "@/services/product";
 
 export default function Home() {
-  const { data } = useGetAllProductsQuery({});
+  const { data, isLoading } = useGetAllProductsQuery({});
 
   return (
     <main className="flex flex-col w-full min-h-screen items-center pb-8">
@@ -42,8 +41,9 @@ export default function Home() {
             </Link>
           </div>
           <ProductShowcase
+            isLoading={isLoading}
             gridConfig={"grid-cols-4"}
-            products={data?.data?.slice(0, 4) || []}
+            products={data?.data?.data.slice(0, 4) || []}
           />
         </div>
 

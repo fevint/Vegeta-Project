@@ -17,10 +17,12 @@ import { hover } from "@/lib/hover";
 
 // assets
 import ProductsJSON from "@/assets/json/products.json";
+import { useGetAllProductsQuery } from "@/services/product";
 
 export default function Products() {
   const router = useRouter();
   const [itemCount, setItemCount] = useState(1);
+  const { data, isLoading } = useGetAllProductsQuery({});
 
   const productDetails = ProductsJSON[0];
 
