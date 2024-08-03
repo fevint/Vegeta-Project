@@ -15,21 +15,40 @@ import { cn, formatNumber } from "@/lib/utils";
 import { hover } from "@/lib/hover";
 
 // assets
-import ProductsJSON from "@/assets/json/products.json";
+
 import {
   useGetAllProductsQuery,
   useGetProductByIdQuery,
 } from "@/services/product";
+import { useCheckoutMutation } from "@/services/transaction";
+import { useSession } from "next-auth/react";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function Products({ params }: { params: { id: string } }) {
+  const { data: session } = useSession();
   const router = useRouter();
   const [itemCount, setItemCount] = useState(1);
   const { data: productDetails } = useGetProductByIdQuery(params.id);
   const { data: recommendedProducts } = useGetAllProductsQuery({});
+  const [mutateCheckout] = useCheckoutMutation();
+  const { toast } = useToast();
 
-  // const productDetails = ProductsJSON[0];
-
-  // const [recommendedProducts] = useState<ProductDetails[]>(ProductsJSON);
+  const handleAddToCart = async () => {
+    if (!session?.user) {
+      toast({
+        title: "Please sign in first",
+        variant: "destructive",
+      });
+      router.push("/auth/signin");
+      return;
+    }
+    const data = {
+      product_id: params.id,
+      qty: itemCount,
+    };
+    await mutateCheckout(data);
+    router.push("/checkout");
+  };
 
   return (
     <main className="flex flex-col w-full min-h-screen items-center pb-8">
@@ -73,6 +92,7 @@ export default function Products({ params }: { params: { id: string } }) {
                 "py-1 px-4 bg-leaf text-white leading-4",
                 hover.shadow
               )}
+              onClick={handleAddToCart}
             >
               <IconCart className="w-5 h-5 mr-2" />
               Masukkan Keranjang
@@ -82,9 +102,7 @@ export default function Products({ params }: { params: { id: string } }) {
                 "py-1 px-4 bg-carrot text-white leading-4",
                 hover.shadow
               )}
-              onClick={() => {
-                router.push("/checkout");
-              }}
+              onClick={handleAddToCart}
             >
               <IconBag className="w-5 h-5 mr-2" />
               Beli Sekarang
