@@ -21,6 +21,37 @@ interface PaymentPayload {
 interface PaymentResponse extends BaseResponse {
   data: Transaction;
 }
+interface CheckoutWithProduct {
+  id: string;
+  userId: string;
+  productId: string;
+  transactionId: string;
+  qty: number;
+  pricePerItem: number;
+  createdAt: Date;
+  updatedAt: Date;
+  product: Product;
+}
+
+export interface TransactionWithCheckout {
+  id: string;
+  userId: string;
+  totalPrice: number;
+  deliveryFee: number;
+  asuranceFee: number;
+  applicationFee: number;
+  grandTotalPrice: number;
+  deliveryType: DeliveryType;
+  createdAt: Date;
+  updatedAt: Date;
+  Checkout: CheckoutWithProduct[];
+}
+interface HistoryResponse extends BaseResponse {
+  data: {
+    data: TransactionWithCheckout[];
+    total: number;
+  };
+}
 
 interface CheckoustResponse extends BaseResponse {
   data: {
@@ -35,12 +66,16 @@ interface CheckoustResponse extends BaseResponse {
   }[];
 }
 
+interface HistoryApiParams {
+  page?: String | undefined;
+}
+
 export const transactionApi = createApi({
   reducerPath: "transactionApi",
   baseQuery: fetchBaseQuery({
     baseUrl: "/api/transaction",
   }),
-  tagTypes: ["checkout"],
+  tagTypes: ["checkout", "transaction"],
   endpoints: (builder) => ({
     checkout: builder.mutation<CheckoutResponse, CheckoutPayload>({
       query: (body) => ({
@@ -62,9 +97,25 @@ export const transactionApi = createApi({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["transaction"],
+    }),
+    history: builder.query<HistoryResponse, HistoryApiParams>({
+      query: ({ page }) => ({
+        url: "/history",
+        params: {
+          page: page || undefined,
+        },
+        // method: "GET",
+        // body,
+      }),
+      providesTags: ["transaction"],
     }),
   }),
 });
 
-export const { useCheckoutMutation, useCheckoutsQuery, usePaymentMutation } =
-  transactionApi;
+export const {
+  useCheckoutMutation,
+  useCheckoutsQuery,
+  usePaymentMutation,
+  useHistoryQuery,
+} = transactionApi;

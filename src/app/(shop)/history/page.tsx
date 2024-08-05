@@ -1,11 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/legacy/image";
 import Link from "next/link";
 
 // components
 import { ProductShowcase } from "@/components/product/product-showcase";
-import { ProductDetails } from "@/components/product/product-card";
+// import { ProductDetails } from "@/components/product/product-card";
 import {
   Select,
   SelectContent,
@@ -24,19 +24,50 @@ import { cn } from "@/lib/utils";
 // assets
 import GoldBadge from "@/assets/images/badge-gold.png";
 import ProductsJSON from "@/assets/json/products.json";
+import { useGetAllProductsQuery } from "@/services/product";
+import { useSession } from "next-auth/react";
+import { useHistoryQuery } from "@/services/transaction";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function History() {
-  const [transactions] = useState([
-    {
-      products: ProductsJSON,
-    },
-    {
-      products: ProductsJSON,
-    },
-  ]);
-  const [recommendedProducts] = useState<ProductDetails[]>(ProductsJSON);
-  const [activePage, setActivePage] = useState(1);
+  // const [transactions] = useState([
+  //   {
+  //     products: ProductsJSON,
+  //   },
+  //   {
+  //     products: ProductsJSON,
+  //   },
+  // ]);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { data: transactions } = useHistoryQuery({
+    page: searchParams?.get("page") || undefined,
+  });
+
+  // const [recommendedProducts] = useState<ProductDetails[]>(ProductsJSON);
+  const { data: recommendedProducts } = useGetAllProductsQuery({});
+  const { data: session } = useSession();
+  const [activePage, setActivePage] = useState(
+    parseInt(searchParams?.get("page") || "1") || 1
+  );
   const [totalPage] = useState(5);
+
+  const handlerChangeFilter = (key: string, value: string) => {
+    const newQuery: Record<string, string> = {};
+
+    searchParams.forEach((param, key) => {
+      newQuery[key] = param;
+    });
+    newQuery[key] = value;
+
+    const urlParams = new URLSearchParams(newQuery).toString();
+
+    router.replace(`/history?${urlParams}`);
+  };
+
+  useEffect(() => {
+    handlerChangeFilter("page", activePage.toString());
+  }, [activePage]);
 
   return (
     <main className="flex flex-col w-full min-h-screen items-center pb-8">
@@ -45,14 +76,14 @@ export default function History() {
           <div className="flex justify-center pt-3 pb-2">
             <div className="w-[71px] h-[71px] rounded-[20px] relative overflow-hidden">
               <Image
-                src="https://ui-avatars.com/api/?name=Taufan+Fadhilah&background=random"
+                src={`https://ui-avatars.com/api/?name=${session?.user.name}&background=random`}
                 layout="fill"
                 alt=""
                 objectFit="cover"
               />
             </div>
           </div>
-          <div className="font-semibold">Taufan Fadhilah</div>
+          <div className="font-semibold">{session?.user.name}</div>
           <div className="flex items-center justify-center">
             <div className="w-[14px] h-[20px] relative mr-2">
               <Image src={GoldBadge} layout="fill" alt="" objectFit="cover" />
@@ -104,17 +135,22 @@ export default function History() {
             </div>
           </div>
 
-          {transactions.map((transaction, index) => (
+          {transactions?.data.data.map((transaction, index) => (
             <ProductHistory
               key={`productHistory${index}`}
-              products={transaction.products}
+              transaction={transaction}
             />
           ))}
 
           <div className="pt-4">
             <CommonPagination
               page={activePage}
-              total={totalPage}
+              total={
+                // totalPage
+                transactions?.data.data
+                  ? Math.ceil(transactions?.data?.total / 2)
+                  : 1
+              }
               onChange={(activePage) => setActivePage(activePage)}
             />
           </div>
@@ -138,7 +174,7 @@ export default function History() {
         </div>
         <ProductShowcase
           gridConfig={"grid-cols-4"}
-          products={recommendedProducts}
+          products={recommendedProducts?.data.data.slice(0, 4) || []}
         />
       </div>
     </main>
